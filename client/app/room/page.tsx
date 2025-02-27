@@ -77,6 +77,10 @@ function MyVideoConference() {
       {/* The GridLayout accepts zero or one child. The child is used
       as a template to render all passed in tracks. */}
       <ParticipantTile />
+
+      {/* {tracks.map((track) => {
+        <VideoTrack trackRef={track} />;
+      })} */}
     </GridLayout>
   );
 }

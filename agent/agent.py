@@ -91,8 +91,8 @@ async def entrypoint(ctx: JobContext):
     agent = VoicePipelineAgent(
         vad=ctx.proc.userdata["vad"],
         stt=deepgram.STT(),
-        llm=openai.LLM(model="gpt-4o-mini"),
-        # llm=google.LLM(model="gemini-2.0-flash-001"),
+        # llm=openai.LLM(model="gpt-4o-mini"),
+        llm=google.LLM(model="gemini-2.0-flash-001"),
         tts=cartesia.TTS(),
         turn_detector=turn_detector.EOUModel(),
         # minimum delay for endpointing, used when turn detector believes the user is done with their turn
