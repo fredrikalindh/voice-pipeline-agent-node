@@ -14,10 +14,34 @@ from livekit.agents.llm import ChatMessage, ChatImage
 from livekit.agents.pipeline import VoicePipelineAgent
 from livekit.plugins import cartesia, openai, google, deepgram, silero, turn_detector
 from livekit import rtc
+from typing import Annotated
+
 
 load_dotenv(dotenv_path=".env.local")
 logger = logging.getLogger("voice-agent")
 
+# first define a class that inherits from llm.FunctionContext
+class AssistantFnc(llm.FunctionContext):
+    # the llm.ai_callable decorator marks this function as a tool available to the LLM
+    # by default, it'll use the docstring as the function's description
+    @llm.ai_callable()
+    async def saw_sheet(
+        self,
+        # by using the Annotated type, arg description and type are available to the LLM
+        sheet_name: Annotated[
+            str, llm.TypeInfo(description="The name of the Google Sheet")
+        ],
+        sheet_url: Annotated[
+            str, llm.TypeInfo(description="The URL of the Google Sheet, get from browser")
+        ],
+        # TODO: add screenshot OR we describe it the column headings and rows
+    ):
+        """Called when the agent sees a Google Sheet"""
+        logger.info(f"################\n\nSaw a sheet {sheet_name} at {sheet_url}")
+        
+        return "I just saw a Google Sheet"
+
+fnc_ctx = AssistantFnc()
 
 async def get_video_track(room: rtc.Room):
     """Find and return the first available remote video track in the room."""
@@ -61,8 +85,9 @@ async def entrypoint(ctx: JobContext):
         text=(
             "You are a voice assistant created by LiveKit that can both see and hear. "
             "You should use short and concise responses, avoiding unpronounceable punctuation. "
-            "When you see an image in our conversation, naturally incorporate what you see "
-            "into your response. Keep visual descriptions brief but informative."
+            "ALWAYS call the saw_sheet function if you see a Google Sheet you haven't seen before," 
+            "You can get the sheet name and url from the image."
+            "DON'T mention this in your response, just call the function."
         ),
     )
 
@@ -93,12 +118,13 @@ async def entrypoint(ctx: JobContext):
         stt=deepgram.STT(),
         # llm=openai.LLM(model="gpt-4o-mini"),
         llm=google.LLM(model="gemini-2.0-flash-001"),
-        tts=cartesia.TTS(),
+        tts=cartesia.TTS(voice="a38e4e85-e815-43ab-acf1-907c4688dd6c"),
         turn_detector=turn_detector.EOUModel(),
         # minimum delay for endpointing, used when turn detector believes the user is done with their turn
         min_endpointing_delay=0.5,
         # maximum delay for endpointing, used when turn detector does not believe the user is done with their turn
         max_endpointing_delay=5.0,
+        fnc_ctx=fnc_ctx,
         chat_ctx=initial_ctx,
         before_llm_cb=before_llm_cb
     )
