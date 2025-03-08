@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { Track } from 'livekit-client';
 
 export default function Page() {
-  const room = 'quickstart-room3';
+  const room = 'quickstart-room4';
   const name = 'quickstart-user';
   const [token, setToken] = useState('');
 
